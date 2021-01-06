@@ -15,3 +15,42 @@
 Введите пароль еще раз для проверки: 123
 Вы ввели правильный пароль
 """
+import hashlib
+from uuid import uuid4
+
+
+def hash_password(password):
+    salt = uuid4().hex
+    return hashlib.sha256(salt.encode() + password.encode()).hexdigest() + ':' + salt
+
+
+def check_hash_password(password, hash):
+    arr = hash.split(":")
+    salt = str(arr[1])
+    return hashlib.sha256(salt.encode() + password.encode()).hexdigest() + ':' + salt == hash
+
+
+def save_to_file(hash, path):
+    pass_file = open(path, 'w')
+    pass_file.write(hash)
+    pass_file.close()
+
+
+def get_from_file(path):
+    pass_file = open(path, 'r')
+    stored_hash = pass_file.read()
+    pass_file.close()
+    return stored_hash
+
+
+path = './pass.txt'
+
+password = input('Введите пароль:')
+hash = hash_password(password)
+save_to_file(hash, path)
+password_repeat = input('Введите пароль еще раз для проверки:')
+stored_hash = get_from_file(path)
+if check_hash_password(password_repeat, stored_hash):
+    print('Вы ввели правильный пароль')
+else:
+    print('Вы ввели неправильный пароль')
