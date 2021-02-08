@@ -13,96 +13,137 @@
 Но постарайтесь обойтись без них.
 """
 """Хаффман через коллекции"""
-from collections import Counter, deque
 
 
-def haffman_tree(s):
-    # Считаем уникальные символы.
-    # Counter({'e': 4, 'b': 3, 'p': 2, ' ': 2, 'o': 2, 'r': 1, '!': 1})
-    count = Counter(s)
-    # Сортируем по возрастанию количества повторений.
-    # deque([('r', 1), ('!', 1), ('p', 2), (' ', 2), ('o', 2), ('b', 3), ('e', 4)])
-    sorted_elements = deque(sorted(count.items(), key=lambda item: item[1]))
-    # Проверка, если строка состоит из одного повторяющего символа.
-    if len(sorted_elements) != 1:
-        # Цикл для построения дерева
-        while len(sorted_elements) > 1:
-            # далее цикл объединяет два крайних левых элемента
-            # Вес объединенного элемента (накопленная частота)
-            # веса - 2, 4, 4, 7, 8, 15
-            weight = sorted_elements[0][1] + sorted_elements[1][1]
-            # Словарь из 2 крайних левых элементов, попутно вырезаем их
-            # из "sorted_elements" (из очереди).
-            # comb - объединенный элемент
-            '''
-            {0: 'r', 1: '!'}
-            {0: {0: 'r', 1: '!'}, 1: 'p'}
-            {0: ' ', 1: 'o'}
-            {0: 'b', 1: {0: ' ', 1: 'o'}}
-            {0: {0: {0: 'r', 1: '!'}, 1: 'p'}, 1: 'e'}
-            {0: {0: 'b', 1: {0: ' ', 1: 'o'}}, 1: {0: {0: {0: 'r', 1: '!'}, 1: 'p'}, 1: 'e'}}
-            '''
-            comb = {0: sorted_elements.popleft()[0],
-                    1: sorted_elements.popleft()[0]}
+class HuffmanCode:
+    def __init__(self, probability):
+        self.probability = probability
 
-            # Ищем место для ставки объединенного элемента
-            for i, _count in enumerate(sorted_elements):
-                if weight > _count[1]:
-                    continue
-                else:
-                    # Вставляем объединенный элемент
-                    sorted_elements.insert(i, (comb, weight))
-                    break
-            else:
-                # Добавляем объединенный корневой элемент после
-                # завершения работы цикла
+    def position(self, value, index):
+        for j in range(len(self.probability)):
+            if value >= self.probability[j]:
+                return j
+        return index - 1
 
-                sorted_elements.append((comb, weight))
-            '''
-            deque([({0: 'r', 1: '!'}, 2), ('p', 2), (' ', 2), ('o', 2), ('b', 3), ('e', 4)])
-            deque([(' ', 2), ('o', 2), ('b', 3), ({0: {0: 'r', 1: '!'}, 1: 'p'}, 4), ('e', 4)])
-            deque([('b', 3), ({0: ' ', 1: 'o'}, 4), ({0: {0: 'r', 1: '!'}, 1: 'p'}, 4), ('e', 4)])
-            deque([({0: {0: 'r', 1: '!'}, 1: 'p'}, 4), ('e', 4), ({0: 'b', 1: {0: ' ', 1: 'o'}}, 7)])
-            deque([({0: 'b', 1: {0: ' ', 1: 'o'}}, 7), ({0: {0: {0: 'r', 1: '!'}, 1: 'p'}, 1: 'e'}, 8)])
-            deque([({0: {0: 'b', 1: {0: ' ', 1: 'o'}}, 1: {0: {0: {0: 'r', 1: '!'}, 1: 'p'}, 1: 'e'}}, 15)])
-            '''
-    else:
-        # приравниваем значение 0 к одному повторяющемуся символу
-        weight = sorted_elements[0][1]
-        comb = {0: sorted_elements.popleft()[0], 1: None}
-        sorted_elements.append((comb, weight))
-    # sorted_elements - deque([({0: {0: 'b', 1: {0: ' ', 1: 'o'}}, 1: {0: {0: {0: 'r', 1: '!'}, 1: 'p'}, 1: 'e'}}, 15)])
-    # {0: {0: 'b', 1: {0: ' ', 1: 'o'}}, 1: {0: {0: {0: 'r', 1: '!'}, 1: 'p'}, 1: 'e'}}
-    # словарь - дерево
-    return sorted_elements[0][0]
+    def characteristics_huffman_code(self, code):
+        length_of_code = [len(k) for k in code]
+
+        mean_length = sum([a * b for a, b in zip(length_of_code, self.probability)])
+
+        print("Average length of the code: %f" % mean_length)
+        # print("Efficiency of the code: %f" % (entropy_of_code / mean_length))
+
+    def compute_code(self):
+        # получаем необходимое число кодов
+        num = len(self.probability)
+        # заполняем массив нужным кол-вом пустых строк
+        huffman_code = [''] * num
+
+        # перебираем элементы списка по два
+        for i in range(num - 2):
+            # ищем сумму вероятностей двух крайних элементов
+            val = self.probability[num - i - 1] + self.probability[num - i - 2]
+            if huffman_code[num - i - 1] != '' and huffman_code[num - i - 2] != '':
+                # к каждому элементу списка последнего элемента клеим '1'
+                huffman_code[-1] = ['1' + symbol for symbol in huffman_code[-1]]
+                # к каждому элементу списка предпоследнего элемента клеим '0'
+                huffman_code[-2] = ['0' + symbol for symbol in huffman_code[-2]]
+            elif huffman_code[num - i - 1] != '':
+                # предпоследний элемент проставляем как '0'
+                huffman_code[num - i - 2] = '0'
+                # у последнего элемента, к каждому элементу добавляем '1' слева
+                huffman_code[-1] = ['1' + symbol for symbol in huffman_code[-1]]
+            elif huffman_code[num - i - 2] != '':
+                # последний элемент проставляем как '1'
+                huffman_code[num - i - 1] = '1'
+                # у предпоследнего(который список), к каждому элементу добавляем '0' слева
+                huffman_code[-2] = ['0' + symbol for symbol in huffman_code[-2]]
+            else:  # проставляем '1' последнему элементу, '0' предпоследнему
+                huffman_code[num - i - 1] = '1'
+                huffman_code[num - i - 2] = '0'
+
+            # ищем позицию для вставки в первоначальный список вероятностей
+            position = self.position(val, i)
+            # отсекаем от изначального списка 2 последних элемента
+            probability = self.probability[0:(len(self.probability) - 2)]
+            # вставляем полученное значение в нужную позицию
+            probability.insert(position, val)
+            if isinstance(huffman_code[num - i - 2], list) and isinstance(huffman_code[num - i - 1], list):
+                # последний и предпоследний элементы списки, тогда клеим в общий список
+                complete_code = huffman_code[num - i - 1] + huffman_code[num - i - 2]
+            elif isinstance(huffman_code[num - i - 2], list):
+                # предпоследний элемент - список, клеим список + значение последнего элемента
+                complete_code = huffman_code[num - i - 2] + [huffman_code[num - i - 1]]
+            elif isinstance(huffman_code[num - i - 1], list):
+                # последний элемент - список, клеим список + значение предпоследнего элемента
+                complete_code = huffman_code[num - i - 1] + [huffman_code[num - i - 2]]
+            else:  # формируем итоговый код, как список из значений двух последних элементов списка
+                complete_code = [huffman_code[num - i - 2], huffman_code[num - i - 1]]
+
+            # отсекаем крайний элемента из списка строк кодов
+            huffman_code = huffman_code[0:(len(huffman_code) - 2)]
+            # вставляем получившийся код в нужную позицию
+            huffman_code.insert(position, complete_code)
+
+        # клеим строки для первого и второго элементов
+        huffman_code[0] = ['0' + symbol for symbol in huffman_code[0]]
+        huffman_code[1] = ['1' + symbol for symbol in huffman_code[1]]
+
+        # если длина второго элемента 0, то вписываем туда '1'
+        if len(huffman_code[1]) == 0:
+            huffman_code[1] = '1'
+
+        count = 0
+        # финальные коды
+        final_code = [''] * num
+
+        # в huffman_code должно остаться 2 элемента
+        for i in range(2):
+            for j in range(len(huffman_code[i])):
+                # последовательно вытаскиваем элементы из первого элемента(список)
+                final_code[count] = huffman_code[i][j]
+                count += 1
+
+        # сортируем полученный массив по длине строк по возрастанию
+        final_code = sorted(final_code, key=len)
+        return final_code
 
 
-code_table = dict()
+# генерирует по строке словарь символов с кол-вом повторений символа в строке
+def generate_frequencies(str):
+    freq = {}
+    for c in str:
+        if c in freq:
+            freq[c] += 1
+        else:
+            freq[c] = 1
+    return freq
 
 
-# tree - {0: {0: 'b', 1: {0: ' ', 1: 'o'}}, 1: {0: {0: {0: 'r', 1: '!'}, 1: 'p'}, 1: 'e'}}
-def haffman_code(tree, path=''):
-    # Если элемент не словарь, значит мы достигли самого символа
-    # и заносим его, а так же его код в словарь (кодовую таблицу).
-    if not isinstance(tree, dict):
-        code_table[tree] = path
-    # Если элемент словарь, рекурсивно спускаемся вниз
-    # по первому и второму значению (левая и правая ветви).
-    else:
-        haffman_code(tree[0], path=f'{path}0')
-        haffman_code(tree[1], path=f'{path}1')
+string = input("Enter the string to compute Huffman Code: ")
 
+# словарь, где ключ это символ, а значение кол-во повторений
+freq = generate_frequencies(string)
+# сортируем словарь по значениям(частотам) в порядке убывания
+freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
+# длина строки
+length = len(string)
+# подсчет вероятностей для каждого символа - частота появления, деленная на длину строки
+probabilities = [float("{:.2f}".format(frequency[1] / length)) for frequency in freq]
+# сортируем по убыванию
+probabilities = sorted(probabilities, reverse=True)
+# создаем объект
+huffmanClassObject = HuffmanCode(probabilities)
+# создаем метод, который строит список кодов
+huffman_code = huffmanClassObject.compute_code()
 
-# строка для кодирования
-s = "beep boop beer!"
+print(' Char | Huffman code ')
+print('----------------------')
 
-# функция заполняет кодовую таблицу (символ-его код)
-# {'b': '00', ' ': '010', 'o': '011', 'r': '1000', '!': '1001', 'p': '101', 'e': '11'}
-haffman_code(haffman_tree(s))
+for id, char in enumerate(freq):
+    if huffman_code[id] == '':
+        print(' %-4r |%12s' % (char[0], 1))
+        continue
+    print(' %-4r |%12s' % (char[0], huffman_code[id]))
 
-# code_table - {'b': '00', ' ': '010', 'o': '011', 'r': '1000', '!': '1001', 'p': '101', 'e': '11'}
-
-# выводим коды для каждого символа
-for i in s:
-    print(code_table[i], end=' ')
-print()
+huffmanClassObject.characteristics_huffman_code(huffman_code)
